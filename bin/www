@@ -1,0 +1,243 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('socialsandbox:server');
+var http = require('http');
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '8080');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+console.log('Listenning on port ' + port)
+server.on('error', onError);
+server.on('listening', onListening);
+var io = require('socket.io').listen(server);
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
+
+
+
+
+
+
+
+var Utils = require('../class/Utils');
+var mongoQuery = require('../class/mongoQuery');
+var UserInputHandler = require('../class/UserInputHandler');
+
+var ent = require('ent');
+
+
+
+
+
+
+// active/desactive les tempos
+G_mode_prod = 1;
+
+G_tempoVar = 3*1000;
+G_tempoFix = 1*1000;
+
+
+// **********************************************************************************************************************************************************
+// **********************************************************************************************************************************************************
+// SOCKET
+// **********************************************************************************************************************************************************
+// **********************************************************************************************************************************************************
+
+
+
+io.sockets.on('connection', function (socket) {
+	console.log('connexion');
+	var G_user = 'test';
+	
+	
+	
+	// ******************************************************
+	// traitement lors de la réception d'une identification
+	// ******************************************************
+	socket.on('new-identification', function (msg) {
+		msg.user = ent.encode(msg.user);
+		console.log('identification:' + msg.user);
+		G_user = msg.user;
+		
+		if(!G_user==''){
+			mongoQuery.userExists(msg.user, function(b){
+				if(!b){
+					// maj bdd
+					console.log('insert user');
+					mongoQuery.insertUser(G_user, function(){});
+					// start chat
+					var txt = 'Hi my name is Caroline';
+					// historiser réponse
+					mongoQuery.insertMsg(G_user, 'OUT', txt, function(){});
+					console.log('emit msg: '+txt);
+					socket.emit('new-msg', {txt: txt, datetime: Utils.getTime()});
+				}else{
+					// return histo
+					console.log('emit histo');
+					mongoQuery.getHisto(G_user, function(res){
+						socket.emit('new-histo', res);
+					});
+				}
+			});
+		}
+	});
+	
+	
+	
+	
+	// ******************************************************
+	// traitement lors de la réception d'un message
+	// ******************************************************
+	socket.on('new-msg', function (msg) {
+		if(!G_user==''){
+			msg.txt = ent.encode(msg.txt);
+			console.log('input: '+msg.txt);
+			
+			// historiser + compte
+			mongoQuery.insertMsg(G_user, 'IN', msg.txt, function(){});
+			console.log(G_user+': insert');
+
+			// répondre
+			var tempo = (Math.random() * G_tempoVar + G_tempoFix)*G_mode_prod;
+			console.log(G_mode_prod + '-' + tempo);
+			txt = 'I\'m not able to answer yet... But feed me and you\'ll see ;)';
+			// envoi user
+			setTimeout(function(){
+				// historiser réponse
+				mongoQuery.insertMsg(G_user, 'OUT', txt, function(){});
+				// envoi
+				console.log('emit msg: '+txt);
+				socket.emit('new-msg', {txt: txt, datetime: Utils.getTime()});
+			}, tempo);
+		}
+	});
+	
+	
+	// ******************************************************
+	// traitement lors de la réception d'une requête
+	// ******************************************************
+	socket.on('new-query', function (msg) {
+		msg.query = ent.encode(msg.query);
+		
+		var match = /^who does like (\w+) \?$/.exec(msg.query);
+		if(match){
+			mongoQuery.getLemmaFromWord(match[1], function(lemma){
+				mongoQuery.getWho(lemma, function(res){
+					if(res == false){
+						socket.emit('new-queryResError', {error: 'Sorry, nobody like this'});
+					}else{
+						res.lemma = lemma;
+						socket.emit('new-queryResWho', res);
+					}
+				});
+			});
+		}else{
+			var match = /^what does like (\w+) \?$/.exec(msg.query);
+			if(match){
+				mongoQuery.userExists(match[1], function(b){
+					if(b){
+						mongoQuery.getWhat(match[1], function(res){
+							res.nickname = match[1];
+							socket.emit('new-queryResWhat', res);
+						});
+					}else{
+						socket.emit('new-queryResError', {error: 'User not found'});
+					}
+				});
+			}else{
+				socket.emit('new-queryResError', {error: 0});
+			}
+		}
+		
+		
+
+		
+		
+
+	});
+	
+	
+	// debug (pour afficher des infos facilement sur le navigateur)
+    socket.on('debug', function (msg) {
+		
+	});
+
+});

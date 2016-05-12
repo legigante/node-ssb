@@ -1,0 +1,31 @@
+extends layout
+
+block content
+  #main
+    header
+      h1= title
+    section
+      #msg
+        h3 Caroline
+        ul
+          each item in historic
+            li(class="#{item.inout}")
+              span= item.txt
+              br
+              span= item.dateTime
+        .bas
+        #form_msg
+          p
+          div
+            textarea#txt(name="txt")
+          div
+            span.btn Send
+    footer
+      span
+        a(href='about') The team...
+      p#log
+      p#logRead
+      p#logDB
+  script(src='/javascripts/jquery.js')
+  script(src='/socket.io/socket.io.js')
+  script(src='/javascripts/home.js')

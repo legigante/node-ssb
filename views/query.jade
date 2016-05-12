@@ -1,0 +1,24 @@
+extends layout
+
+block content
+  #main
+    header
+      h1= title
+    aside
+      span available commands:
+      ul
+        li who does like $word ?
+        li what does like $nickname ?
+    section
+      form#form_msg
+        p
+        div
+          textarea#txt(name="txt")
+        div
+          span.btn Send
+      p#queryres
+      p#log
+      p#log2
+  script(src='/javascripts/jquery.js')
+  script(src='/socket.io/socket.io.js')
+  script(src='/javascripts/query.js')
