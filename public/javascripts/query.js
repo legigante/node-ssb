@@ -41,4 +41,25 @@ $(function() {
 		return '<ul id="resWhatHisto"><li>' + arr.join('</li><li>') + '</li></ul>';
 	}
 	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	
 });

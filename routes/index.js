@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 var mongoQuery = require('../class/mongoQuery');
+var Utils = require('../class/Utils');
 
 /* GET home page. */
 router.get('/', function(req, res) {
@@ -23,7 +24,7 @@ router.get('/query', function(req, res) {
 
 // about page
 router.get('/about', function(req, res) {
-    res.render('about', {title: 'Social Sandbox\'s team introduction' });
+    res.render('about', {title: 'Social SandBox', prez: Utils.getPrez()});
 });
 
 module.exports = router;

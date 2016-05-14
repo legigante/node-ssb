@@ -5,17 +5,22 @@ block content
     header
       h1= title
     aside
-      span available commands:
-      ul
-        li who does like $word ?
-        li what does like $nickname ?
+      span Available commands:
+      br
+      code
+        span who does like <var>$word</var> ?
+        br
+        span what does like <var>$nickname</var> ?
     section
       form#form_msg
         p
         div
-          textarea#txt(name="txt")
+          textarea#txt(name="txt",rows="3",cols="30")
         div
           span.btn Send
+    footer
+      span
+        a(href='about') About Social Sandox
       p#queryres
       p#log
       p#log2

@@ -6,7 +6,7 @@ block content
       h1= title
     section
       #msg
-        h3 Caroline
+        h2 Caroline
         ul
           each item in historic
             li(class="#{item.inout}")
@@ -17,12 +17,12 @@ block content
         #form_msg
           p
           div
-            textarea#txt(name="txt")
+            textarea#txt(name="txt",rows="3",cols="30")
           div
             span.btn Send
     footer
       span
-        a(href='about') The team...
+        a(href='about') About Social Sandox
       p#log
       p#logRead
       p#logDB
